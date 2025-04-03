@@ -1,0 +1,754 @@
+{
+	"info": {
+		"_postman_id": "2c05d2d5-3fc7-452c-9c20-33431ead9d49",
+		"name": "We Are Pod Interaction",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "21364448"
+	},
+	"item": [
+		{
+			"name": "01. [BACK-END] Fetch and save OIDC configuration",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Example response JSON: { \"token\": \"abc123\" }\r",
+							"const response = pm.response.json();\r",
+							"\r",
+							"// Save the token to an environment variable\r",
+							"pm.environment.set(\"CITIZEN_OIDC_AUTH_ENDPOINT\", response.authorization_endpoint);\r",
+							"pm.environment.set(\"CITIZEN_OIDC_TOKEN_ENDPOINT\", response.token_endpoint);\r",
+							"pm.environment.set(\"CITIZEN_OIDC_USERINFO_ENDPOINT\", response.userinfo_endpoint);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{CITIZEN_OIDC_HOST}}/.well-known/openid-configuration",
+					"host": [
+						"{{CITIZEN_OIDC_HOST}}"
+					],
+					"path": [
+						".well-known",
+						"openid-configuration"
+					]
+				},
+				"description": "Fetches the OpenID Configuration and saves the required endpoints for future API requests."
+			},
+			"response": []
+		},
+		{
+			"name": "02. [CITIZEN > Browser call] OIDC authorize via browser",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{CITIZEN_OIDC_AUTH_ENDPOINT}}?scope=openid+offline_access+webid+rrn&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Foidc-redirect&code_challenge=hjxeanJhJhkG2qNObJXNiHdNhABPJ-U1N09hL-hGA-4&code_challenge_method=S256&prompt=consent&client_id={{CITIZEN_OIDC_CLIENT_ID}}",
+					"host": [
+						"{{CITIZEN_OIDC_AUTH_ENDPOINT}}"
+					],
+					"query": [
+						{
+							"key": "scope",
+							"value": "openid+offline_access+webid+rrn"
+						},
+						{
+							"key": "response_type",
+							"value": "code"
+						},
+						{
+							"key": "redirect_uri",
+							"value": "http%3A%2F%2Flocalhost%3A3000%2Foidc-redirect"
+						},
+						{
+							"key": "code_challenge",
+							"value": "hjxeanJhJhkG2qNObJXNiHdNhABPJ-U1N09hL-hGA-4"
+						},
+						{
+							"key": "code_challenge_method",
+							"value": "S256"
+						},
+						{
+							"key": "prompt",
+							"value": "consent"
+						},
+						{
+							"key": "client_id",
+							"value": "{{CITIZEN_OIDC_CLIENT_ID}}"
+						}
+					]
+				},
+				"description": "This authentication endpoint needs to be opened in the browser. The OIDC flow will be used and in the end after authentication of the user, the user will be redirected to\n\nhttp://localhost:3000/oidc-redirect?code=#AUTHORIZATION_CODE#\n\nThere the code parmeter is important and needs to be copied to the next request."
+			},
+			"response": []
+		},
+		{
+			"name": "03. [BACK-END] Perform code exchange (requires auth code)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const response = pm.response.json();\r",
+							"\r",
+							"pm.environment.set(\"CITIZEN_OIDC_ACCESS_TOKEN\", response.access_token);\r",
+							"pm.environment.set(\"CITIZEN_OIDC_ID_TOKEN\", response.id_token);\r",
+							"pm.environment.set(\"CITIZEN_OIDC_REFRESH_TOKEN\", response.refresh_token);\r",
+							"\r",
+							"const payloadStr = response.id_token.split('.')[1];\r",
+							"const decodedString = Buffer.from(payloadStr, 'base64').toString('utf-8');\r",
+							"const payload = JSON.parse(decodedString);\r",
+							"pm.environment.set('CITIZEN_OIDC_WEB_ID', payload.webid);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"const clientId = pm.environment.get(\"CITIZEN_OIDC_CLIENT_ID\");\r",
+							"const clientSecret = pm.environment.get(\"CITIZEN_OIDC_CLIENT_SECRET\");\r",
+							"\r",
+							"const base64 = Buffer.from(`${clientId}:${clientSecret}`, 'utf-8').toString(\"base64\");\r",
+							"\r",
+							"pm.environment.set(\"CITIZEN_OIDC_CREDENTIALS_BASE64\", base64);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Basic {{CITIZEN_OIDC_CREDENTIALS_BASE64}}",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "grant_type",
+							"value": "authorization_code",
+							"type": "text"
+						},
+						{
+							"key": "code",
+							"value": "ENTER_CODE_HERE",
+							"type": "text"
+						},
+						{
+							"key": "redirect_uri",
+							"value": "http://localhost:3000/oidc-redirect",
+							"type": "text"
+						},
+						{
+							"key": "code_verifier",
+							"value": "BFcauAl-MQyo72zyRKDrs8pJwIH9YORhEhH_OqwGcvI",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{CITIZEN_OIDC_TOKEN_ENDPOINT}}",
+					"host": [
+						"{{CITIZEN_OIDC_TOKEN_ENDPOINT}}"
+					]
+				},
+				"description": "Copy/paste the code parameter from previous call in the code parameter of the body form data.\n\nYou will receive an access token and an id token. The ID token is used to identify the user and acquire the web id.\n\nIn future calls, when using the access grant only approach, the access token will be used to issue the access grant."
+			},
+			"response": []
+		},
+		{
+			"name": "04. [BACK-END] Fetch Web ID and save Pod",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Regular expression to match the storage value\r",
+							"const storageRegex = /<http:\\/\\/www\\.w3\\.org\\/ns\\/pim\\/space#storage>\\s*<([^>]+)>/;\r",
+							"\r",
+							"// Execute the regular expression\r",
+							"const match = pm.response.text().match(storageRegex);\r",
+							"\r",
+							"if (match) {\r",
+							"    const storageValue = match[1];\r",
+							"    pm.environment.set('CITIZEN_OIDC_WEB_ID_STORAGE', storageValue);\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"packages": {},
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "text/turtle",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{CITIZEN_OIDC_WEB_ID}}",
+					"host": [
+						"{{CITIZEN_OIDC_WEB_ID}}"
+					]
+				},
+				"description": "This call fetches the SOLID Web ID found in the ID token received from the citizen OIDC.  \nAfter fetching the Web ID the post script uses a RegEx to parse the storage Pod location. This location is required for issuing an access request / access grant.\n\nWhen implementing this part in your client, you should not use a RegEx to do so. Use a RDF Turtle parser."
+			},
+			"response": []
+		},
+		{
+			"name": "05. [BACK-END] Perform client authentication",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const response = pm.response.json();\r",
+							"\r",
+							"pm.environment.set(\"WE_ARE_OIDC_ACCESS_TOKEN\", response.access_token);\r",
+							"pm.environment.set(\"WE_ARE_OIDC_ID_TOKEN\", response.id_token);\r",
+							"pm.environment.set(\"WE_ARE_OIDC_REFRESH_TOKEN\", response.refresh_token);\r",
+							"\r",
+							"const payloadStr = response.id_token.split('.')[1];\r",
+							"const decodedString = Buffer.from(payloadStr, 'base64').toString('utf-8');\r",
+							"const payload = JSON.parse(decodedString);\r",
+							"pm.environment.set('WE_ARE_OIDC_WEB_ID', payload.webid);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "grant_type",
+							"value": "client_credentials",
+							"type": "text"
+						},
+						{
+							"key": "client_secret",
+							"value": "{{WE_ARE_OIDC_CLIENT_SECRET}}",
+							"type": "text"
+						},
+						{
+							"key": "client_id",
+							"value": "{{WE_ARE_OIDC_CLIENT_ID}}",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{WE_ARE_OIDC_HOST}}/token",
+					"host": [
+						"{{WE_ARE_OIDC_HOST}}"
+					],
+					"path": [
+						"token"
+					]
+				},
+				"description": "With this call we authenticate the client via the client credentials flow. The result will be a client access token and a client id token.  \n  \nThe ID token will show the web id created for the We Are Demo client. The future access grants will be issued for use by this SOLID Web ID.\n\nUsing the access token you can issue an access request for a specifc Pod location and owner Web ID.\n\nYou can use the ID token to exchange an access grant for an access token using the UMA service."
+			},
+			"response": []
+		},
+		{
+			"name": "06. [BACK-END] Fetch and save VC configuration",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Example response JSON: { \"token\": \"abc123\" }\r",
+							"const response = pm.response.json();\r",
+							"\r",
+							"// Save the token to an environment variable\r",
+							"pm.environment.set(\"VC_ISSUE_ENDPOINT\", response.issuerService);\r",
+							"pm.environment.set(\"VC_DERIVE_ENDPOINT\", response.derivationService);\r",
+							"pm.environment.set(\"VC_QUERY_ENDPOINT\", response.queryService);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{VC_HOST}}/.well-known/vc-configuration",
+					"host": [
+						"{{VC_HOST}}"
+					],
+					"path": [
+						".well-known",
+						"vc-configuration"
+					]
+				},
+				"description": "Fetch and saves the verifiable credentials service configuration.\n\nThe configuration includes the endpoints for issuing access requests / access grants (both verifiable credentails, see [What is a Verifiable Credential?](https://www.w3.org/TR/vc-data-model-2.0/#what-is-a-verifiable-credential) )\n\nThis service could also be used to query / derive all verifiable credentials issued to your client (client web id)."
+			},
+			"response": []
+		},
+		{
+			"name": "07.1.1 [BACK-END] Create access request",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"const expirationDate = new Date();\r",
+							"expirationDate.setFullYear(2099);\r",
+							"pm.environment.set('VC_EXPIRATION_DATE', expirationDate.toISOString());"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const accessRequest = pm.response.json();\r",
+							"pm.environment.set(\"VC_ACCESS_REQUEST_ID\", accessRequest.id);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{WE_ARE_OIDC_ACCESS_TOKEN}}",
+						"description": "access token of We Are Backend",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"credential\": {\r\n    \"@context\": [\r\n      \"https://www.w3.org/2018/credentials/v1\",\r\n      \"https://schema.inrupt.com/credentials/v1.jsonld\"\r\n    ],\r\n    \"type\": [\r\n      \"VerifiableCredential\",\r\n      \"SolidAccessRequest\"\r\n    ],\r\n    \"expirationDate\": \"{{VC_EXPIRATION_DATE}}\",\r\n    \"credentialSubject\": {\r\n      \"hasConsent\": {\r\n        \"mode\": [\r\n          \"http://www.w3.org/ns/auth/acl#Read\",\r\n          \"http://www.w3.org/ns/auth/acl#Append\",\r\n          \"http://www.w3.org/ns/auth/acl#Write\"\r\n        ],\r\n        \"hasStatus\": \"https://w3id.org/GConsent#ConsentStatusRequested\",\r\n        \"forPersonalData\": [\r\n          \"{{CITIZEN_OIDC_WEB_ID_STORAGE}}book_index\"\r\n        ],\r\n        \"forPurpose\": [\r\n          \"https://utils.we-are-health.be/data/vocab/sharing/container-sharing-purpose#_ContainerSharingPurpose\"\r\n        ],\r\n        \"isConsentForDataSubject\": \"{{CITIZEN_OIDC_WEB_ID}}\"\r\n      }\r\n    }\r\n  }\r\n}\r\n ",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{VC_ISSUE_ENDPOINT}}",
+					"host": [
+						"{{VC_ISSUE_ENDPOINT}}"
+					]
+				},
+				"description": "This call creates an access request for the client on the resource of the user.\n\nThis means that this will happen in the name of the client, so in the `Authorization: Bearer` header, we must provide the access token received after authenticating the client.\n\nIn the body of the request, a valid access request json-ld object must be provided. Where `forPersonalData` should link to the resource in the pod, `forPurpose`to a purpose description and `isConcentforDataSubject` should refer to the user's webId.\n\nA expiration date will also be generated using the Postman pre-request script."
+			},
+			"response": []
+		},
+		{
+			"name": "07.1.2 [CITIZEN > Browser call] Consent to access request",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://we-are-acc.vito.be/nl/access-request?requestVcUrl={{VC_ACCESS_REQUEST_ID}}&redirectUrl=http://localhost:4200/",
+					"protocol": "https",
+					"host": [
+						"we-are-acc",
+						"vito",
+						"be"
+					],
+					"path": [
+						"nl",
+						"access-request"
+					],
+					"query": [
+						{
+							"key": "requestVcUrl",
+							"value": "{{VC_ACCESS_REQUEST_ID}}",
+							"description": "url encoded access request url"
+						},
+						{
+							"key": "redirectUrl",
+							"value": "http://localhost:4200/"
+						}
+					]
+				},
+				"description": "Using the access request issued in the previous request, the citizen should be redirect to the We Are AMA in which the user can consent to this access request.  \nIn turn the We Are AMA will issue an access grant and expose the access grant ID in the redirect URL."
+			},
+			"response": []
+		},
+		{
+			"name": "07.1.3 [BACK-END] Fetch access grant (requires vc id as url)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const accessGrant = pm.response.json();\r",
+							"\r",
+							"const claimToken = {\r",
+							"    \"@context\": [\r",
+							"        \"https://www.w3.org/2018/credentials/v1\"\r",
+							"    ],\r",
+							"    \"type\": [\r",
+							"        \"VerifiablePresentation\"\r",
+							"    ],\r",
+							"    \"verifiableCredential\": []\r",
+							"}\r",
+							"\r",
+							"claimToken.verifiableCredential.push(accessGrant)\r",
+							"const base64 = Buffer.from(JSON.stringify(claimToken)).toString('base64');\r",
+							"\r",
+							"pm.environment.set(\"UMA_CLAIM_TOKEN\", base64);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{WE_ARE_OIDC_ACCESS_TOKEN}}",
+						"description": "Authorization bearer header from OIDC user access token",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "ENTER VC ID HERE",
+					"host": [
+						"ENTER VC ID HERE"
+					]
+				},
+				"description": "Fetches and parses the access grant (using the access grant ID provided in the previous request).\n\nThe Postman post-request script will create an UMA claim token which is necessary in the future UMA requests.\n\nAlso see [the UMA specification.](https://openid.net/specs/openid-heart-uma2-1_0.html)"
+			},
+			"response": []
+		},
+		{
+			"name": "07.2 [BACK-END] Create access grant w/o access request",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const accessGrant = pm.response.json();\r",
+							"\r",
+							"const claimToken = {\r",
+							"    \"@context\": [\r",
+							"        \"https://www.w3.org/2018/credentials/v1\"\r",
+							"    ],\r",
+							"    \"type\": [\r",
+							"        \"VerifiablePresentation\"\r",
+							"    ],\r",
+							"    \"verifiableCredential\": []\r",
+							"}\r",
+							"\r",
+							"claimToken.verifiableCredential.push(accessGrant)\r",
+							"const base64 = Buffer.from(JSON.stringify(claimToken)).toString('base64');\r",
+							"\r",
+							"pm.environment.set(\"UMA_CLAIM_TOKEN\", base64)"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{CITIZEN_OIDC_ACCESS_TOKEN}}",
+						"description": "Authorization bearer header from OIDC user access token",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/ld-json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"credential\": {\r\n    \"@context\": [\r\n      \"https://www.w3.org/2018/credentials/v1\",\r\n      \"https://schema.inrupt.com/credentials/v1.jsonld\"\r\n    ],\r\n    \"credentialSubject\": {\r\n      \"providedConsent\": {\r\n       \"mode\": [\r\n          \"http://www.w3.org/ns/auth/acl#Read\",\r\n          \"http://www.w3.org/ns/auth/acl#Append\",\r\n          \"http://www.w3.org/ns/auth/acl#Write\"\r\n        ],\r\n        \"hasStatus\": \"https://w3id.org/GConsent#ConsentStatusExplicitlyGiven\",\r\n        \"forPersonalData\": [\r\n          \"{{CITIZEN_OIDC_WEB_ID_STORAGE}}book_index\"\r\n        ],        \r\n        \"isProvidedTo\": \"{{WE_ARE_OIDC_WEB_ID}}\"\r\n      }\r\n    }\r\n  }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{VC_ISSUE_ENDPOINT}}",
+					"host": [
+						"{{VC_ISSUE_ENDPOINT}}"
+					]
+				},
+				"description": "This is the direct endpoint to create an access grant. In this call, the user is granting access to the web id provided in the access grant body. Therefore the citizen access token must be provided in the `Authorization Bearer` header.\n\nThe body contains an access grant containing the details about the citizen Pod access. Including the web id to whom the access is granted to. The Pod storage location for which the recipient web id has now access."
+			},
+			"response": []
+		},
+		{
+			"name": "08. [BACK-END] Fetch UMA configuration",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Example response JSON: { \"token\": \"abc123\" }\r",
+							"const response = pm.response.json();\r",
+							"\r",
+							"// Save the token to an environment variable\r",
+							"pm.environment.set(\"UMA_TOKEN_ENDPOINT\", response.token_endpoint);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{UMA_HOST}}/.well-known/uma2-configuration",
+					"host": [
+						"{{UMA_HOST}}"
+					],
+					"path": [
+						".well-known",
+						"uma2-configuration"
+					]
+				},
+				"description": "Fetches the UMA configuration. The token endpoint will be used to perform the access grant and ID token exchange.\n\nAlso see [the UMA specification.](https://openid.net/specs/openid-heart-uma2-1_0.html)"
+			},
+			"response": []
+		},
+		{
+			"name": "09. [BACK-END] Get UMA ticket",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const header = pm.response.headers.get(\"WWW-Authenticate\");\r",
+							"\r",
+							"// Log the header value to the console\r",
+							"console.log(header);\r",
+							"\r",
+							"const regex = /ticket=\"([^\"]+)\"/;\r",
+							"const match = header.match(regex);\r",
+							"\r",
+							"if (match) {\r",
+							"    const ticket = match[1];\r",
+							"    console.log(`Ticket: ${ticket}`);\r",
+							"    pm.environment.set(\"UMA_TICKET\", ticket);\r",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "HEAD",
+				"header": [],
+				"url": {
+					"raw": "{{CITIZEN_OIDC_WEB_ID_STORAGE}}book_index",
+					"host": [
+						"{{CITIZEN_OIDC_WEB_ID_STORAGE}}book_index"
+					]
+				},
+				"description": "This call is necessary to get a `ticket` and the `uma endpoint url` for exchanging access grants for access tokens.\n\nAlso see [the UMA specification.](https://openid.net/specs/openid-heart-uma2-1_0.html)"
+			},
+			"response": []
+		},
+		{
+			"name": "10. [BACK-END] Exchange UMA ticket and Access Grant for Access Token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const response = pm.response.json();\r",
+							"\r",
+							"pm.environment.set(\"UMA_ACCESS_TOKEN\", response.access_token);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{WE_ARE_OIDC_ID_TOKEN}}",
+						"description": "idtoken van de backend",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "grant_type",
+							"value": "urn:ietf:params:oauth:grant-type:uma-ticket",
+							"type": "text"
+						},
+						{
+							"key": "ticket",
+							"value": "{{UMA_TICKET}}",
+							"type": "text"
+						},
+						{
+							"key": "claim_token",
+							"value": "{{UMA_CLAIM_TOKEN}}",
+							"type": "text"
+						},
+						{
+							"key": "claim_token_format",
+							"value": "https://www.w3.org/TR/vc-data-model/#json-ld",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{UMA_TOKEN_ENDPOINT}}",
+					"host": [
+						"{{UMA_TOKEN_ENDPOINT}}"
+					]
+				},
+				"description": "This call will exchange an access grant for a client application into an access token, which then can be used as `Authorization: Bearer`header when fetching and writing data to a user's pod.\n\nThe claim token must be constructed as a base64 encoded version of the following structure:\n\n```\n{\n  \"@context\": [\n    \"https://www.w3.org/2018/credentials/v1\"\n  ],\n  \"type\": [\n    \"VerifiablePresentation\"\n  ],\n  \"verifiableCredential\": [\n   <ACCESS GRANT>\n  ]\n}\n\n ```\n\nAlso find the Postman post-request script which will generate a claim token."
+			},
+			"response": []
+		},
+		{
+			"name": "11. [BACK-END] Write to pod",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "text/turtle",
+						"type": "text"
+					},
+					{
+						"key": "Link",
+						"value": "<http://www.w3.org/ns/ldp#Resource>; rel=\"type\"",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{UMA_ACCESS_TOKEN}}",
+						"type": "text"
+					},
+					{
+						"key": "If-none-Match",
+						"value": "*",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "<#example_poetry> <http://www.w3.org/2000/01/rdf-schema#label> \"Postman Demo Test Resource\".",
+					"options": {
+						"raw": {
+							"language": "text"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{CITIZEN_OIDC_WEB_ID_STORAGE}}book_index",
+					"host": [
+						"{{CITIZEN_OIDC_WEB_ID_STORAGE}}book_index"
+					]
+				},
+				"description": "Write a resource with the UMA access token provided using the`Authorization: Bearer` header.\n\nTake into account that this token is short-lived.\n\nIf you only want to create a resource, you can enable to \"If-none-Match\" header. This will ensure that the resource does not yet exist and will be handled by the server."
+			},
+			"response": []
+		},
+		{
+			"name": "12. [BACK-END] Read from pod",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{UMA_ACCESS_TOKEN}}",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "text/turtle",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{CITIZEN_OIDC_WEB_ID_STORAGE}}book_index",
+					"host": [
+						"{{CITIZEN_OIDC_WEB_ID_STORAGE}}book_index"
+					]
+				},
+				"description": "Read the previously written resource from the users Pod using the UMA access token provided in the \"Authorization\" header."
+			},
+			"response": []
+		}
+	]
+}
