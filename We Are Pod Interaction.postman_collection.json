@@ -1,13 +1,13 @@
 {
 	"info": {
-		"_postman_id": "2c05d2d5-3fc7-452c-9c20-33431ead9d49",
+		"_postman_id": "434beb4a-102f-4664-b896-7638da30380d",
 		"name": "We Are Pod Interaction",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "21364448"
 	},
 	"item": [
 		{
-			"name": "01. [BACK-END] Fetch and save OIDC configuration",
+			"name": "01. [BACK-END] [OIDC flow] Fetch and save OIDC configuration",
 			"event": [
 				{
 					"listen": "test",
@@ -44,7 +44,7 @@
 			"response": []
 		},
 		{
-			"name": "02. [CITIZEN > Browser call] OIDC authorize via browser",
+			"name": "02. [CITIZEN > Browser call] [OIDC flow] Authorize via browser",
 			"request": {
 				"method": "GET",
 				"header": [],
@@ -89,7 +89,7 @@
 			"response": []
 		},
 		{
-			"name": "03. [BACK-END] Perform code exchange (requires auth code)",
+			"name": "03. [BACK-END] [OIDC flow] Perform code exchange (requires auth code)",
 			"event": [
 				{
 					"listen": "test",
@@ -172,6 +172,101 @@
 					]
 				},
 				"description": "Copy/paste the code parameter from previous call in the code parameter of the body form data.\n\nYou will receive an access token and an id token. The ID token is used to identify the user and acquire the web id.\n\nIn future calls, when using the access grant only approach, the access token will be used to issue the access grant."
+			},
+			"response": []
+		},
+		{
+			"name": "02.1 [CITIZEN > Browser call] [alternate HTI flow] Get Web ID with HTI exchange via browser",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{WE_ARE_PIMS_HOST}}/nl/hti/launch?client-id={{WE_ARE_OIDC_CLIENT_ID}}&debug=true",
+					"host": [
+						"{{WE_ARE_PIMS_HOST}}"
+					],
+					"path": [
+						"nl",
+						"hti",
+						"launch"
+					],
+					"query": [
+						{
+							"key": "client-id",
+							"value": "{{WE_ARE_OIDC_CLIENT_ID}}"
+						},
+						{
+							"key": "debug",
+							"value": "true"
+						}
+					]
+				},
+				"description": "With regards to the HTI flow (alternative for the OIDC flow).\n\nThis endpoint needs to be opened in the browser and will initiate a user OIDC login, whereafter a HTI token will be issued by the We Are PIMS and shown in the browser. This token needs to be pasted in the next HTI call (Request > Body > Form-data > \"base64\" form field."
+			},
+			"response": []
+		},
+		{
+			"name": "03.1 [CITIZEN > Browser call] [alternate HTI flow] Save Web ID by HTI token",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"if (pm.request.body.formdata) {\r",
+							"    const formData = pm.request.body.formdata.toObject();\r",
+							"\r",
+							"    // Access specific form data values\r",
+							"    const base64 = formData.base64;\r",
+							"\r",
+							"    console.log(\"Base64 encoded HTI token:\", base64);\r",
+							"\r",
+							"    const payloadStr = base64.split('.')[1];\r",
+							"    const decodedString = Buffer.from(payloadStr, 'base64').toString('utf-8');\r",
+							"    const payload = JSON.parse(decodedString);\r",
+							"    console.log(\"Decoded HTI token: \" + JSON.stringify(payload));\r",
+							"    if(payload.sub) {\r",
+							"        console.log(\"Web ID: \" + payload.sub);\r",
+							"        pm.environment.set('CITIZEN_OIDC_WEB_ID', payload.sub);\r",
+							"        console.log(\"Succesfully retrieved the Web ID from the HTI token.\")\r",
+							"        pm.execution.skipRequest(\"Succesfully retrieved the Web ID from the HTI token.\")\r",
+							"    } else {\r",
+							"        console.log(\"Something went wrong parsing the HTI token and retrieving the webid claim.\");\r",
+							"        pm.execution.skipRequest(\"Something went wrong parsing the HTI token and retrieving the webid claim.\")\r",
+							"    }\r",
+							"} else {\r",
+							"    console.log(\"Something went wrong parsing the HTI token and retrieving the webid claim.\");\r",
+							"    pm.execution.skipRequest(\"Something went wrong parsing the HTI token and retrieving the webid claim.\")\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "base64",
+							"value": "ENTER BASE64 HTI TOKEN HERE",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://dummy.vito.be",
+					"protocol": "http",
+					"host": [
+						"dummy",
+						"vito",
+						"be"
+					]
+				},
+				"description": "With regards to the HTI flow (alternative for the OIDC flow).\n\nThis is a dummy call to parse the HTI token provided in the previous call and save it to the Postman environment.\n\nSee Request > Body > Form-Data and fill in the \"base64\" field with the provided HTI token in the previous call."
 			},
 			"response": []
 		},
@@ -394,12 +489,9 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "https://we-are-acc.vito.be/nl/access-request?requestVcUrl={{VC_ACCESS_REQUEST_ID}}&redirectUrl=http://localhost:4200/",
-					"protocol": "https",
+					"raw": "{{WE_ARE_PIMS_HOST}}/nl/access-request?requestVcUrl={{VC_ACCESS_REQUEST_ID}}&redirectUrl=http://localhost:4200/",
 					"host": [
-						"we-are-acc",
-						"vito",
-						"be"
+						"{{WE_ARE_PIMS_HOST}}"
 					],
 					"path": [
 						"nl",
@@ -476,7 +568,7 @@
 			"response": []
 		},
 		{
-			"name": "07.2 [BACK-END] Create access grant w/o access request",
+			"name": "07.2 [BACK-END] [Only OIDC flow] Create access grant w/o access request",
 			"event": [
 				{
 					"listen": "test",
@@ -511,11 +603,6 @@
 						"key": "Authorization",
 						"value": "Bearer {{CITIZEN_OIDC_ACCESS_TOKEN}}",
 						"description": "Authorization bearer header from OIDC user access token",
-						"type": "text"
-					},
-					{
-						"key": "Content-Type",
-						"value": "application/ld-json",
 						"type": "text"
 					}
 				],
