@@ -176,12 +176,58 @@
 			"response": []
 		},
 		{
-			"name": "02.1 [CITIZEN > Browser call] [alternate HTI flow] Get Web ID with HTI exchange via browser",
+			"name": "02.1 [HELPER FUNCTION] [alternate HTI flow] Fetch first redirect URI from client ID",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const clientDoc = pm.response.json();\r",
+							"\r",
+							"const redirectUris = clientDoc.redirect_uris;\r",
+							"pm.environment.set('WE_ARE_OIDC_REDIRECT_URI', redirectUris[0]);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/ld+json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{WE_ARE_OIDC_CLIENT_ID}}",
+					"host": [
+						"{{WE_ARE_OIDC_CLIENT_ID}}"
+					]
+				},
+				"description": "With regards to the HTI flow (alternative for the OIDC flow).\n\nThis is a helper function that should not be executed on the back-end nor on the front-end. It is purely to fetch the Client ID provided in the environment and retrieve the first redirect URI that is registered. Which will be used in the next request to start the HTI flow with user interaction."
+			},
+			"response": []
+		},
+		{
+			"name": "02.2 [CITIZEN > Browser call] [alternate HTI flow] Get Web ID with HTI exchange via browser",
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{WE_ARE_PIMS_HOST}}/nl/hti/launch?client-id={{WE_ARE_OIDC_CLIENT_ID}}&debug=true",
+					"raw": "{{WE_ARE_PIMS_HOST}}/nl/hti/launch?client_id={{WE_ARE_OIDC_CLIENT_ID}}&redirect_uri={{WE_ARE_OIDC_REDIRECT_URI}}&debug=true",
 					"host": [
 						"{{WE_ARE_PIMS_HOST}}"
 					],
@@ -192,8 +238,12 @@
 					],
 					"query": [
 						{
-							"key": "client-id",
+							"key": "client_id",
 							"value": "{{WE_ARE_OIDC_CLIENT_ID}}"
+						},
+						{
+							"key": "redirect_uri",
+							"value": "{{WE_ARE_OIDC_REDIRECT_URI}}"
 						},
 						{
 							"key": "debug",
@@ -206,7 +256,7 @@
 			"response": []
 		},
 		{
-			"name": "03.1 [CITIZEN > Browser call] [alternate HTI flow] Save Web ID by HTI token",
+			"name": "03.1 [BACK-END] [alternate HTI flow] Save Web ID by HTI token",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -296,11 +346,17 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"packages": {},
-						"type": "text/javascript"
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
 					}
 				}
 			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
 			"request": {
 				"method": "GET",
 				"header": [
@@ -310,6 +366,10 @@
 						"type": "text"
 					}
 				],
+				"body": {
+					"mode": "formdata",
+					"formdata": []
+				},
 				"url": {
 					"raw": "{{CITIZEN_OIDC_WEB_ID}}",
 					"host": [
@@ -542,6 +602,9 @@
 					}
 				}
 			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
 			"request": {
 				"method": "GET",
 				"header": [
