@@ -30,7 +30,6 @@ The project brings together a diverse group of Flemish and Dutch partners, inclu
 <img src="provincie_antwerpen_logo_RGB.png?raw=true" width="300px">
 <img src="VLAIO_sponsorlogo-antraciet.png?raw=true" width="300px">
 
-
 ## Prerequisites
 The following items are prerequisites necessary to use the Postman project to interact with the We Are Solid pods.
 
