@@ -20,6 +20,7 @@ By following the flow illustrated here, developers can quickly grasp the key con
 This postman collection has been developed within the We Are project. For more information about We Are, visit [we-are-health.be](https://we-are-health.be/)
 
 The We Are project was made possible with the financial support of the Flemish department of Work, Economy, Science, Innovation and Social economy.
+
 <img src="DEP_WEWIS_kleur.jpg?raw=true" width="300px"></img>
 
 This postman collection was used by the WellData project. WellData (Dataruimte voor Preventie) is a cross-border innovation project supported by Interreg Vlaanderen-Nederland, with co-funding from the Province of Antwerp (Flanders) and the Province of North Brabant (Netherlands).
