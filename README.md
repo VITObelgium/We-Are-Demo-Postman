@@ -17,14 +17,14 @@ By following the flow illustrated here, developers can quickly grasp the key con
 
 ## Project Context
 
-This Postman collection has been developed as a deliverable of the WellData collaboration.
+This postman collection has been developed within the We Are project. For more information about We Are, visit [we-are-health.be](https://we-are-health.be/)
 
-WellData (Dataruimte voor Preventie) is a cross-border innovation project supported by Interreg Vlaanderen-Nederland, with co-funding from the Province of Antwerp (Flanders) and the Province of North Brabant (Netherlands).
+The We Are project was made possible with the financial support of the Flemish department of Work, Economy, Science, Innovation and Social economy.
+<img src="DEP_WEWIS_kleur.jpg?raw=true" width="300px"></img>
 
-The project brings together a diverse group of Flemish and Dutch partners, including:
-VITO, Domus Medica vzw, Zorgzaam Leuven, Gaston Remmers – Stichting Mijn Data Onze Gezondheid, NSX – Normalized Systems, Selfcare BV, Sport Vlaanderen, Care Innovation Center West-Brabant, Nuts, Eindhoven University of Technology, LiCalab – Living & Care Lab, TNO, VAN – Vlaams Apothekers Netwerk, and Lokaal Bestuur Vorselaar.
+This postman collection was used by the WellData project. WellData (Dataruimte voor Preventie) is a cross-border innovation project supported by Interreg Vlaanderen-Nederland, with co-funding from the Province of Antwerp (Flanders) and the Province of North Brabant (Netherlands).
 
-For more information about We Are, visit [we-are-health.be](https://we-are-health.be/)
+The project brings together a diverse group of Flemish and Dutch partners, including: VITO, Domus Medica vzw, Zorgzaam Leuven, Gaston Remmers – Stichting Mijn Data Onze Gezondheid, NSX – Normalized Systems, Selfcare BV, Sport Vlaanderen, Care Innovation Center West-Brabant, Nuts, Eindhoven University of Technology, LiCalab – Living & Care Lab, TNO, VAN – Vlaams Apothekers Netwerk, and Lokaal Bestuur Vorselaar.
 
 <img src="EI_Logo WellData_Dataruimte voor Preventie.jpg?raw=true" width="300px"></img>
 <img src="provincie_antwerpen_logo_RGB.png?raw=true" width="300px">
