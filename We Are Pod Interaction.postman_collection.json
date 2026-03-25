@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "434beb4a-102f-4664-b896-7638da30380d",
+		"_postman_id": "6aa23af7-2353-4a51-a7aa-4bac2ab48151",
 		"name": "We Are Pod Interaction",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "21364448"
+		"_exporter_id": "17307613"
 	},
 	"item": [
 		{
@@ -49,14 +49,14 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{CITIZEN_OIDC_AUTH_ENDPOINT}}?scope=openid+offline_access+webid+rrn&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Foidc-redirect&code_challenge=hjxeanJhJhkG2qNObJXNiHdNhABPJ-U1N09hL-hGA-4&code_challenge_method=S256&prompt=consent&client_id={{CITIZEN_OIDC_CLIENT_ID}}",
+					"raw": "{{CITIZEN_OIDC_AUTH_ENDPOINT}}?scope=openid+offline_access+webid&response_type=code&redirect_uri=http://localhost:3000/oidc_redirect&code_challenge=hjxeanJhJhkG2qNObJXNiHdNhABPJ-U1N09hL-hGA-4&code_challenge_method=S256&prompt=consent&client_id={{CITIZEN_OIDC_CLIENT_ID}}",
 					"host": [
 						"{{CITIZEN_OIDC_AUTH_ENDPOINT}}"
 					],
 					"query": [
 						{
 							"key": "scope",
-							"value": "openid+offline_access+webid+rrn"
+							"value": "openid+offline_access+webid"
 						},
 						{
 							"key": "response_type",
@@ -64,7 +64,7 @@
 						},
 						{
 							"key": "redirect_uri",
-							"value": "http%3A%2F%2Flocalhost%3A3000%2Foidc-redirect"
+							"value": "http://localhost:3000/oidc_redirect"
 						},
 						{
 							"key": "code_challenge",
@@ -107,14 +107,15 @@
 							"pm.environment.set('CITIZEN_OIDC_WEB_ID', payload.webid);"
 						],
 						"type": "text/javascript",
-						"packages": {}
+						"packages": {},
+						"requests": {}
 					}
 				},
 				{
 					"listen": "prerequest",
 					"script": {
 						"exec": [
-							"const clientId = pm.environment.get(\"CITIZEN_OIDC_CLIENT_ID\");\r",
+							"const clientId = encodeURIComponent(pm.environment.get(\"CITIZEN_OIDC_CLIENT_ID\"));\r",
 							"const clientSecret = pm.environment.get(\"CITIZEN_OIDC_CLIENT_SECRET\");\r",
 							"\r",
 							"const base64 = Buffer.from(`${clientId}:${clientSecret}`, 'utf-8').toString(\"base64\");\r",
@@ -122,7 +123,8 @@
 							"pm.environment.set(\"CITIZEN_OIDC_CREDENTIALS_BASE64\", base64);"
 						],
 						"type": "text/javascript",
-						"packages": {}
+						"packages": {},
+						"requests": {}
 					}
 				}
 			],
@@ -141,8 +143,8 @@
 					}
 				],
 				"body": {
-					"mode": "formdata",
-					"formdata": [
+					"mode": "urlencoded",
+					"urlencoded": [
 						{
 							"key": "grant_type",
 							"value": "authorization_code",
@@ -155,7 +157,7 @@
 						},
 						{
 							"key": "redirect_uri",
-							"value": "http://localhost:3000/oidc-redirect",
+							"value": "http://localhost:3000/oidc_redirect",
 							"type": "text"
 						},
 						{
@@ -290,7 +292,8 @@
 							""
 						],
 						"type": "text/javascript",
-						"packages": {}
+						"packages": {},
+						"requests": {}
 					}
 				}
 			],
@@ -598,13 +601,11 @@
 							"pm.environment.set(\"UMA_CLAIM_TOKEN\", base64);"
 						],
 						"type": "text/javascript",
-						"packages": {}
+						"packages": {},
+						"requests": {}
 					}
 				}
 			],
-			"protocolProfileBehavior": {
-				"disableBodyPruning": true
-			},
 			"request": {
 				"method": "GET",
 				"header": [
